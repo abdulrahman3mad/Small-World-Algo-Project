@@ -17,25 +17,25 @@ namespace SmallWorld
         public static int QueryNum;
         public static int DegreeOfSeperation;
         public static int[] DegreeFrequencies;
-
+       
         static void Main(string[] args)
         {
             RunAllTestCases();
         }
-
         public static void RunAllTestCases()
         {
-            //RunSampleTestCases();
+            RunSampleTestCases();
             RunSmallTestCases();
             RunMediumTestCases();
             RunLargeTestCases();
             RunExtremeTestCases();
         }
+        #region TestCases
         private static void RunSampleTestCases()
         {
             List<KeyValuePair<string, string>> Queries = new List<KeyValuePair<string, string>>();
             Console.WriteLine("************Sample*************");
-            ConstructAdjacencyList(@"SampleTests\movies1.txt");
+            ConstructAdjacencyList(@".\SampleTests\movies1.txt");
             Queries = ReadQueriesFile(@"SampleTests\queries1.txt");
             RunAllQueries(Queries);
             Console.WriteLine("-------Sample is done...");
@@ -107,8 +107,7 @@ namespace SmallWorld
             Console.WriteLine($"Execution time: {watch.ElapsedMilliseconds / 1000 / 60} Minutes");
             Console.WriteLine("Press Any Key To Continue...");
             Console.ReadKey();
-
-
+            
             Console.WriteLine("----------------Medium Case 2--------------");
             Console.WriteLine("----------Case 2-- File 1---------");
             watch = new System.Diagnostics.Stopwatch();
@@ -122,10 +121,12 @@ namespace SmallWorld
             Console.WriteLine($"Execution time: {watch.ElapsedMilliseconds / 1000 / 60} Minutes");
             Console.WriteLine("Press Any Key To Continue...");
             Console.ReadKey();
+            
 
             Console.WriteLine("----------Case 2--File 2--------");
             watch = new System.Diagnostics.Stopwatch();
             watch.Start();
+            ConstructAdjacencyList(@"MediumTests\Case 2\Movies4736.txt");
             Queries = ReadQueriesFile(@"MediumTests\Case 2\queries2000.txt");
             RunAllQueries(Queries);
             Console.WriteLine("----- ---Medium Case 2 is done. Congrats!!!!!");
@@ -140,6 +141,7 @@ namespace SmallWorld
         {
             List<KeyValuePair<string, string>> Queries = new List<KeyValuePair<string, string>>();
             Console.WriteLine("**************Large**************");
+            
             Console.WriteLine("----------Case 1- Queries26---------");
             var watch = new System.Diagnostics.Stopwatch();
             watch.Start();
@@ -151,7 +153,7 @@ namespace SmallWorld
             Console.WriteLine($"Execution time: {watch.ElapsedMilliseconds / 1000} Seconds");
             Console.WriteLine($"Execution time: {watch.ElapsedMilliseconds / 1000 / 60} Minutes");
             Console.ReadKey();
-
+            
 
             Console.WriteLine("----------Case 1--Queries600--------");
             watch = new System.Diagnostics.Stopwatch();
@@ -195,10 +197,12 @@ namespace SmallWorld
             Console.WriteLine($"Execution time: {watch.ElapsedMilliseconds / 1000} Seconds");
             Console.WriteLine($"Execution time: {watch.ElapsedMilliseconds / 1000 / 60} Minutes");
         }
+        #endregion
 
+        #region Files Read & Initilization Data structures
         public static List<KeyValuePair<string, string>> ReadQueriesFile(string FileName)
         {
-            string filePath = @"C:\Users\abdul\source\repos\SmallWorldProject\SmallWorldProject\" + FileName;
+            string filePath = @"D:\SmallWorldProject\SmallWorldProject\" + FileName;
             string[] QueriesLines = File.ReadAllLines(filePath);
 
             List<KeyValuePair<string, string>> Queries = new List<KeyValuePair<string, string>>();
@@ -210,22 +214,24 @@ namespace SmallWorld
 
             return Queries;
         }
-        public static void ConstructAdjacencyList(string FileName)
+        public static void ConstructAdjacencyList(string FileName)  // O(n*V^2)
         {
-            string filePath = @"C:\Users\abdul\source\repos\SmallWorldProject\SmallWorldProject\" + FileName;
+            string filePath = @"D:\SmallWorldProject\SmallWorldProject\" + FileName;
             IDictionary<string, List<string>> Actors = new Dictionary<string, List<string>>();
             AdjacencyList = new Dictionary<string, IDictionary<string, List<string>>>();
 
             using (StreamReader reader = new StreamReader(filePath))
             {
                 string movieLine = "";
-                while ((movieLine = reader.ReadLine()) != null)
+                while ((movieLine = reader.ReadLine()) != null) // 0(n) --> n: #movies
                 {
                     string[] movieLineValues = movieLine.Split('/');
+
                     for (int i = 1; i < movieLineValues.Length; i++) // O(V) --> v: #actors
                     {
                         string Actor = movieLineValues[i];
-                        if (!(AdjacencyList.Keys.Contains(Actor)))
+
+                        if (!(AdjacencyList.Keys.Contains(Actor))) // 0(1)
                             AdjacencyList.Add(Actor, new Dictionary<string, List<string>>());
 
                         for (int x = 1; x < movieLineValues.Length; x++) // O(V) --> v: #actors
@@ -233,18 +239,17 @@ namespace SmallWorld
                             if (x != i)
                             {
                                 string AdjacentActor = movieLineValues[x];
-                                if (!AdjacencyList[Actor].Keys.Contains(AdjacentActor))
+                                if (!AdjacencyList[Actor].Keys.Contains(AdjacentActor)) // 0(1)
                                     AdjacencyList[Actor].Add(AdjacentActor, new List<string>());
 
                                 AdjacencyList[Actor][AdjacentActor].Add(movieLineValues[0]);
                             }
-                        }
-                        
+                        }        
                     }
                 }
             }
         }
-        
+        #endregion
         public static void RunAllQueries(List<KeyValuePair<string, string>> Queries)
         {
             QueryNum = 1;
@@ -254,13 +259,11 @@ namespace SmallWorld
                 DegreeOfSeperation = CalcDegreeByBFS(Query, isOptimized);
                 FindAllShortestPathsByDFS(Query.Key, Query.Value);
                 CalculateRelationStrength();
-                //CalcDistributionOfDegree(Query); // Bonus 1
+                CalcDistributionOfDegree(Query); // Bonus 1
                 DisplayFinalResult(Query);
                 QueryNum++;
             }
         }
-
-        // O(V+E) Overall
         static int CalcDegreeByBFS(KeyValuePair<string, string> Query, bool IsOptimized)
         {
             //-- BFS Variables & Setting---
@@ -301,9 +304,8 @@ namespace SmallWorld
             }
             return distances[Query.Value];
         }
-
-        static void FindAllShortestPathsByDFS(string source, string destination)
-        {
+        static void FindAllShortestPathsByDFS(string source, string destination) // 0(V+E) + O(V^2)
+        { 
             AllPathesFromStoD = new List<Stack<string>>();
             Stack<string> path = new Stack<string>();
             if (DegreeOfSeperation == 1)
@@ -314,11 +316,10 @@ namespace SmallWorld
             }
             else
             {
-                FindAllDistancesByBFS(source, destination, true);
-                DFS(source, destination, destination, path);
+                FindAllDistancesByBFS(source, destination, true); // 0(V+E)
+                DFS(source, destination, destination, path);  // O(V^2)
             }
         }
-
         static void FindAllDistancesByBFS(string source, string destination, bool isSpecificDestination)
         {
             // O(V + E) overall 
@@ -342,14 +343,14 @@ namespace SmallWorld
                     break;
             }
         }
-        static Stack<string> DFS(string source, string destination, string end, Stack<string> path)
+        static Stack<string> DFS(string source, string destination, string end, Stack<string> path) // O(V^2)
         {
             if (destination == end)
                 path.Push(end);
 
-            if (destination == source)
+            if (destination == source) // --> BASE CASE
             {
-                AllPathesFromStoD.Add(new Stack<string>(path));
+                AllPathesFromStoD.Add(new Stack<string>(path)); // O(V)
                 path.Pop();
                 return path;
             }
@@ -358,14 +359,14 @@ namespace SmallWorld
             if (DestinationAdjacencyList.Count <= 0)
                 return path;
 
-
-            foreach (string AdjacentItem in DestinationAdjacencyList)
+            foreach (string AdjacentItem in DestinationAdjacencyList) // O(V)
             {
                 if (distances.Keys.Contains(AdjacentItem))
                 {
                     if (distances[AdjacentItem] == (distances[destination] - 1))
                     {
                         path.Push(AdjacentItem);
+                        // O(V) --> decrease by 1 each time & in case between it and the destination 
                         path = DFS(source, AdjacentItem, end, path);
                     }
                 }
@@ -373,34 +374,33 @@ namespace SmallWorld
             path.Pop();
             return path;
         }
-
-        static int CalculateRelationStrength()
+        static int CalculateRelationStrength() // O(V^2*deg(source))
         {
-            int PathRelationStrength = 0;
-            StrongestRelation = 0;
+            int PathRelationStrength = 0; // O(1)
+            StrongestRelation = 0; // O(1)
 
-            foreach (Stack<string> path in AllPathesFromStoD)
+            foreach (Stack<string> path in AllPathesFromStoD) // O(V*deg(Source))
             {
-                Stack<string> TempPath = new Stack<string>(path);
-                string ParentNode = "";
-                PathRelationStrength = 0;
+                Stack<string> TempPath = new Stack<string>(path);  // O(V)
+                string ParentNode = ""; // O(1)
+                PathRelationStrength = 0; // O(1)
 
-                while (TempPath.Count > 1)
+                while (TempPath.Count > 1) // O(V)
                 {
-                    ParentNode = TempPath.Pop();
-                    PathRelationStrength += AdjacencyList[ParentNode][TempPath.Peek()].Count;
+                    ParentNode = TempPath.Pop(); // O(1)
+                    PathRelationStrength += AdjacencyList[ParentNode][TempPath.Peek()].Count; // O(1)
                 }
+
                 if (PathRelationStrength > StrongestRelation)
                 {
-                    StrongestRelation = PathRelationStrength;
-                    //StrongestPath = new string[path.Count];
-                    //path.CopyTo(StrongestPath, 0);
+                    StrongestRelation = PathRelationStrength; 
+                    StrongestPath = new string[path.Count];
+                    path.CopyTo(StrongestPath, 0);
                     
                 }
             }
             return StrongestRelation;
         }
-
         static void CalcDistributionOfDegree(KeyValuePair<string, string> Query) // Θ(E+2V)
         {
             
@@ -414,6 +414,7 @@ namespace SmallWorld
             }
         }
 
+        #region Display Results
         public static void DisplayFinalResult(KeyValuePair<string, string> Query)
         {
             Console.WriteLine($"---------Q:{QueryNum}" + Query.Key + "-->" + Query.Value + "---------");
@@ -421,8 +422,8 @@ namespace SmallWorld
             Console.WriteLine("Relation Strength: " + StrongestRelation);
 
             DisplayShortestPath();
-            //DisplayStrongestPath();
-            //DisplayDistributionOfDegree();
+            DisplayStrongestPath();
+            DisplayDistributionOfDegree();
         }
         private static void DisplayShortestPath()
         {
@@ -456,5 +457,7 @@ namespace SmallWorld
                 Console.WriteLine();
             }
         }
+        #endregion
+
     }
 }
